@@ -58,13 +58,37 @@
 			children = (
 				1073FDEC236EFF2300A25885 /* AppDelegate.swift */,
 				1073FDEE236EFF2300A25885 /* SceneDelegate.swift */,
-				1073FDF0236EFF2300A25885 /* ViewController.swift */,
-				1073FDF2236EFF2300A25885 /* Main.storyboard */,
-				1073FDF5236EFF2700A25885 /* Assets.xcassets */,
+				10A23F3323774A7600BFE380 /* Controller */,
+				10A23F3223774A6500BFE380 /* View */,
+				10A23F3423774A8800BFE380 /* Supporting Files */,
 				1073FDF7236EFF2700A25885 /* LaunchScreen.storyboard */,
 				1073FDFA236EFF2700A25885 /* Info.plist */,
 			);
 			path = Calculator;
+			sourceTree = "<group>";
+		};
+		10A23F3223774A6500BFE380 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				1073FDF2236EFF2300A25885 /* Main.storyboard */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		10A23F3323774A7600BFE380 /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				1073FDF0236EFF2300A25885 /* ViewController.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		10A23F3423774A8800BFE380 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				1073FDF5236EFF2700A25885 /* Assets.xcassets */,
+			);
+			path = "Supporting Files";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
