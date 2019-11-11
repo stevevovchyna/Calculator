@@ -7,6 +7,11 @@
 //
 
 import UIKit
+import AVFoundation
+
+protocol FixedWidthInteger {
+    
+}
 
 class ViewController: UIViewController {
     
@@ -14,6 +19,8 @@ class ViewController: UIViewController {
     var right : Int = 0
     var operation : String = ""
     var newNumber : Bool = true
+    var isNegative : Bool = false
+    var player: AVAudioPlayer?
 
     @IBOutlet weak var onscreenNumbers: UILabel!
     
@@ -23,41 +30,87 @@ class ViewController: UIViewController {
     }
 
     @IBAction func numberTapped(_ sender: UIButton) {
+        playSound(name: "fart", ext: "mp3")
         print("Button pressed: \(sender.tag)")
-        if newNumber || onscreenNumbers.text! == "0" {
-            onscreenNumbers.text! = String(sender.tag)
-            right = Int(onscreenNumbers.text!) ?? 1
-            newNumber = false
-        } else {
-            onscreenNumbers.text! += String(sender.tag)
-            right = Int(onscreenNumbers.text!) ?? 1
+        if (onscreenNumbers.text!.count < 9 && !isNegative) || (onscreenNumbers.text!.count < 10 && isNegative) || newNumber {
+            if newNumber || onscreenNumbers.text! == "0" {
+                setLabel(output: String(sender.tag))
+                let numberOnScreen = onscreenNumbers?.text ?? "1"
+                right = NSDecimalNumber(string: numberOnScreen) as! Int
+                newNumber = false
+            } else {
+                onscreenNumbers.text! += String(sender.tag)
+                let numberOnScreen = onscreenNumbers?.text ?? "1"
+                right = NSDecimalNumber(string: numberOnScreen) as! Int
+            }
         }
     }
     
     @IBAction func allClear(_ sender: Any) {
         print("Label cleared!")
-        onscreenNumbers.text! = "0"
-        left = 0
-        right = 0
-        operation = ""
+        setLabel(output: "0")
+        resetValues()
     }
+    
+    @IBAction func backspace(_ sender: UIButton) {
+        if let _ = onscreenNumbers.text!.firstIndex(of: "e") {
+            setLabel(output: "0")
+        } else if isNegative {
+            if onscreenNumbers.text!.count > 2 {
+                setLabel(output: String(onscreenNumbers.text!.dropLast()))
+                let numberOnScreen = onscreenNumbers?.text ?? "1"
+                right = NSDecimalNumber(string: numberOnScreen) as! Int
+            } else if onscreenNumbers.text!.count == 2, let _ = onscreenNumbers.text!.firstIndex(of: "-") {
+                setLabel(output: "0")
+                isNegative = false
+                let numberOnScreen = onscreenNumbers?.text ?? "1"
+                right = NSDecimalNumber(string: numberOnScreen) as! Int
+            }
+        } else {
+            if onscreenNumbers.text!.count != 1 {
+                setLabel(output: String(onscreenNumbers.text!.dropLast()))
+                let numberOnScreen = onscreenNumbers?.text ?? "1"
+                right = NSDecimalNumber(string: numberOnScreen) as! Int
+            } else if onscreenNumbers.text!.count == 1 && onscreenNumbers.text! != "0" {
+                setLabel(output: "0")
+                let numberOnScreen = onscreenNumbers?.text ?? "1"
+                right = NSDecimalNumber(string: numberOnScreen) as! Int
+            }
+        }
+        print("Number deleted")
+    }
+    
     
     @IBAction func setNegativeNumber(_ sender: Any) {
         if let i = onscreenNumbers.text!.firstIndex(of: "-") {
             onscreenNumbers.text!.remove(at: i)
+            isNegative = false
             print("Value set to positive")
         } else {
             if onscreenNumbers.text! != "0" {
-                onscreenNumbers.text! = "-\(onscreenNumbers.text!)"
+                setLabel(output: "-\(onscreenNumbers.text!)")
+                isNegative = true
                 print("Value set to negative")
             }
         }
     }
     
     @IBAction func operation(_ sender: UIButton) {
-        left = Int(onscreenNumbers.text!) ?? 0
+        let numberOnScreen = onscreenNumbers?.text ?? "1"
+        if operation == "" {
+            left = NSDecimalNumber(string: numberOnScreen) as! Int
+        } else {
+            let result = calculator()
+            print("Result: \(result). Left: \(left). Right: \(right). Operation: \(operation)")
+            operation = ""
+            if result == "Error" {
+                setLabel(output: "Error")
+            } else {
+                setLabel(output: formatOutput(Int(result)!))
+                left = NSDecimalNumber(string: result) as! Int
+            }
+        }
         newNumber = true
-        print("Operation chosen: \(sender.tag). left = \(left). right = \(right)")
         switch sender.tag {
         case 0:
             operation = "plus"
@@ -69,38 +122,115 @@ class ViewController: UIViewController {
             operation = "divide"
         default:
             operation = ""
-            print("Nothing chosen")
         }
+        print("Operation is now : \(operation)")
     }
    
     @IBAction func result(_ sender: UIButton) {
+        playSound(name: "burp", ext: "wav")
         newNumber = true
         let result = calculator()
-        print("Result: \(result). Right: \(right). Left: \(left). operation: \(operation)")
+        print("Result: \(result). Left: \(left). Right: \(right). Operation: \(operation)")
+        operation = ""
         if result == "Error" {
-            onscreenNumbers.text! = "Error"
+            setLabel(output: "Error")
         } else {
-            onscreenNumbers.text! = result
-            left = Int(result)!
+            setLabel(output: formatOutput(Int(result)!))
+            left = NSDecimalNumber(string: result) as! Int
         }
     }
     
     func calculator() -> String {
         switch operation {
         case "plus":
-            return String(left + right)
+            let result = left.addingReportingOverflow(right)
+            if result.1 {
+                resetValues()
+                return "Error"
+            } else {
+                return String(result.0)
+            }
         case "minus":
-            return String(left - right)
+            let result = left.subtractingReportingOverflow(right)
+            if result.1 {
+                resetValues()
+                return "Error"
+            } else {
+                return String(result.0)
+            }
         case "multiply":
-            return String(left * right)
+            let result = left.multipliedReportingOverflow(by: right)
+            if result.1 {
+                resetValues()
+                return "Error"
+            } else {
+                return String(result.0)
+            }
         case "divide":
-            return right == 0 ? "Error" : String(left / right)
+            if right == 0 {
+                return "Error"
+            } else {
+                let result = left.dividedReportingOverflow(by: right)
+                if result.1 {
+                    resetValues()
+                    return "Error"
+                } else {
+                    return String(result.0)
+                }
+            }
         case "":
-            return String(right)
+            return String(left)
         default:
+            resetValues()
             print("error")
             return "Error"
         }
+    }
+    
+    func setLabel(output : String) {
+        if let _ = output.firstIndex(of: "-") {
+            isNegative = true
+        } else {
+            isNegative = false
+        }
+        onscreenNumbers.text = output
+    }
+    
+    func playSound(name : String, ext : String) {
+        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else { return }
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+            player = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileType.mp3.rawValue)
+            guard let player = player else { return }
+            player.play()
+        } catch let error {
+            print(error.localizedDescription)
+        }
+    }
+    
+    func resetValues() {
+        left = 0
+        right = 0
+        operation = ""
+        newNumber = true
+        isNegative = false
+    }
+    
+    func formatOutput(_ value: Int) -> String {
+        let formatter = NumberFormatter()
+        let number = NSNumber(value: value)
+        
+        if value > 999999999 || value < -999999999{
+            formatter.numberStyle = .scientific
+            formatter.exponentSymbol = "e"
+        }
+
+        formatter.minimumIntegerDigits = 1
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 6
+        
+        return String(formatter.string(from: number) ?? "")
     }
     
 }
