@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import AVFoundation
 
 protocol FixedWidthInteger {
     
@@ -20,7 +19,6 @@ class ViewController: UIViewController {
     var operation : String = ""
     var newNumber : Bool = true
     var isNegative : Bool = false
-    var player: AVAudioPlayer?
 
     @IBOutlet weak var onscreenNumbers: UILabel!
     
@@ -30,7 +28,6 @@ class ViewController: UIViewController {
     }
 
     @IBAction func numberTapped(_ sender: UIButton) {
-        playSound(name: "fart", ext: "mp3")
         print("Button pressed: \(sender.tag)")
         if (onscreenNumbers.text!.count < 9 && !isNegative) || (onscreenNumbers.text!.count < 10 && isNegative) || newNumber {
             if newNumber || onscreenNumbers.text! == "0" {
@@ -127,7 +124,6 @@ class ViewController: UIViewController {
     }
    
     @IBAction func result(_ sender: UIButton) {
-        playSound(name: "burp", ext: "wav")
         newNumber = true
         let result = calculator()
         print("Result: \(result). Left: \(left). Right: \(right). Operation: \(operation)")
@@ -194,19 +190,6 @@ class ViewController: UIViewController {
             isNegative = false
         }
         onscreenNumbers.text = output
-    }
-    
-    func playSound(name : String, ext : String) {
-        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else { return }
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
-            player = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileType.mp3.rawValue)
-            guard let player = player else { return }
-            player.play()
-        } catch let error {
-            print(error.localizedDescription)
-        }
     }
     
     func resetValues() {
